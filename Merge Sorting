@@ -1,0 +1,76 @@
+#include <iostream>
+#include <ctime>
+
+using namespace std;
+
+static int swap = 1;
+static int comp = 1;
+
+bool comprasion() {
+    ::comp++;
+    return true;
+}
+
+void MergeSort(int *arr, int left, int right)
+{
+	int mid, first, last, i;
+	int *buff = new int[1001];
+	mid = (left + right) / 2;
+	first = left;
+	last = mid + 1;
+	for (i = left; i <= right; i++)
+		if (((first <= mid) && ((last > right) || (arr[first] < arr[last]))) && comprasion())
+		{
+			buff[i] = arr[first];
+			first++;
+			::swap++;
+		}
+		else
+		{
+			buff[i] = arr[last];
+			last++;
+			::swap++;
+		}
+
+	for (i = left; i <= right; i++) arr[i] = buff[i];
+	delete[] buff;
+};
+
+void MergeSortRec(int *arr, int first, int last)
+{
+
+	if (first < last)
+	{
+		MergeSortRec(arr, first, (first + last) / 2);
+		MergeSortRec(arr, (first + last) / 2 + 1, last);
+		MergeSort(arr, first, last);
+	}
+
+};
+
+int main()
+{
+	int i, size;
+	int *arr = new int[1001];
+	cout << "Size > ";
+	cin >> size;
+	srand(time(NULL));
+	for (i = 1; i <= size; i++)
+	{
+		//cout << i << " el = "; cin >> arr[i];
+		arr[i] = rand() % 2001 + (-1000);
+	}
+	unsigned int startTime = clock();
+	MergeSortRec(arr, 1, size);
+	unsigned int endTime = clock();
+	unsigned int searchTime = endTime - startTime;
+	cout << "Array: ";
+	for (i = 1; i <= size; i++)
+	{
+		cout << arr[i] << " ";
+	}
+	delete[]arr;
+	cout << endl << "Swap: " << ::swap - 1;
+	cout << endl << "Comprasion: " << ::comp - 1;
+	cout << endl << "Time, sec: " << searchTime / 1000.0 << endl;
+}
