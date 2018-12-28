@@ -601,18 +601,24 @@ int main()
 {
 	Tree<int> tree;
 	AVLTree<int> treeB;
+	hashtable<int, int> hash;
 	int s[8] = { 12, 53, 3, 75, 7, 8, 9, 10 };
 	for (int i = 0; i < 8; i++) {
 		int m = s[i];
 		tree.insert(m);
 		treeB.insert(m);
-	}
+		hash.add(m, i);
+	};
 	tree.print();
 	cout << endl << endl << endl << endl << endl << endl;
 	treeB.print();
 	cout << endl;
+	cout<<hash<<endl;
+
 	tree.find(75);
 	tree.find(2);
 	treeB.find(75);
 	treeB.find(2);
+	cout << "Hash does " <<(hash.contains(2) ? "" : "not ") << "contain key 2\n";
+	cout << "Hash does " <<(hash.contains(75) ? "" : "not ") << "contain key 75\n";
 }
