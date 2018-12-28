@@ -1,0 +1,161 @@
+#include <iostream>
+#include <string> 
+#include <vector> 
+#include <map> 
+#include <stack> 
+#include <queue> 
+#include <cstdlib> 
+
+using namespace std;
+
+const string SOLUTION = "010203040506070809101112131415SS";
+
+struct Node {
+	string state;
+	string path;
+};
+
+bool goalTest(Node a) {
+	return (a.state.compare(SOLUTION) == 0);
+}
+
+string swapNew(string state, unsigned int a, unsigned int b) {
+	string newState(state);
+	string temp = newState.substr(a, 2);
+	newState[a] = newState[b];
+	newState[a + 1] = newState[b + 1];
+	newState[b] = temp[0];
+	newState[b + 1] = temp[1];
+	return newState;
+}
+
+void generateSuccessors(Node curNode, vector<Node>& possible_paths) {
+	int loc = curNode.state.find("SS");
+	// cout << "SS: " << loc << endl; 
+	if (loc > 7) { //Можно идти вверх?
+		Node newNode;
+		newNode.state = swapNew(curNode.state, loc, loc - 8);
+		newNode.path = curNode.path;
+		newNode.path += 'u';
+		possible_paths.push_back(newNode);
+	}
+	if (loc < 24) { //Можно идти вниз?
+		Node newNode;
+		newNode.state = swapNew(curNode.state, loc, loc + 8);
+		newNode.path = curNode.path;
+		newNode.path += 'd';
+		possible_paths.push_back(newNode);
+	}
+	if (loc % 8 < 6) { //Можно идти вправо?
+		Node newNode;
+		newNode.state = swapNew(curNode.state, loc, loc + 2);
+		newNode.path = curNode.path;
+		newNode.path += 'r';
+		possible_paths.push_back(newNode);
+	}
+	if (loc % 8 > 1) { //Можно идти влево?
+		Node newNode;
+		newNode.state = swapNew(curNode.state, loc, loc - 2);
+		newNode.path = curNode.path;
+		newNode.path += 'l';
+		possible_paths.push_back(newNode);
+	}
+}
+
+Node bfs(Node startNode) { //Поиск в ширину
+	queue<Node> frontier; //Очередь следующих ходов для проверки
+	frontier.push(startNode);
+	map<string, int> expanded; //Отслеживание посещённых ходов
+	int numExpanded = 0;
+	unsigned int maxFrontier = 0;
+	while (!frontier.empty()) {
+		Node curNode = frontier.front();
+		frontier.pop();
+		numExpanded += 1;
+		expanded[curNode.state] = 1;
+		vector<Node> nextNodes;
+		generateSuccessors(curNode, nextNodes);
+		for (unsigned int i = 0; i < nextNodes.size(); i++) {
+			if (goalTest(nextNodes[i])) {
+				cout << "Expanded: " << numExpanded << " nodes" << endl;
+				cout << "Max Frontier: " << maxFrontier << " nodes" << endl;
+				cout << nextNodes[i].state << endl;
+				return nextNodes[i];
+			}
+			if (expanded.find(nextNodes[i].state) != expanded.end()) {
+				continue;
+			}
+			frontier.push(nextNodes[i]);
+			if (frontier.size() > maxFrontier) {
+				maxFrontier = frontier.size();
+			}
+		}
+	}
+}
+
+Node dfs(Node startNode, unsigned int maxDepth = 80) { //Поиск в глубину
+	stack<Node> frontier;
+	frontier.push(startNode);
+	map<string, int> expanded;
+	int numExpanded = 0;
+	unsigned int maxFrontier = 0;
+	while (!frontier.empty()) {
+		Node curNode = frontier.top();
+		frontier.pop();
+		expanded[curNode.state] = curNode.path.length();
+		numExpanded += 1;
+		vector<Node> nextNodes;
+		cout << curNode.path << endl;
+		generateSuccessors(curNode, nextNodes);
+		for (unsigned int i = 0; i < nextNodes.size(); i++) {
+			if (nextNodes[i].path.length() > maxDepth) {
+				continue;
+			}
+			if (goalTest(nextNodes[i])) {
+				cout << "Expanded: " << numExpanded << " nodes" << endl;
+				cout << "Max Frontier: " << maxFrontier << " nodes" << endl;
+				cout << nextNodes[i].state << endl;
+				return nextNodes[i];
+			}
+			if (expanded.find(nextNodes[i].state) != expanded.end()
+				&& expanded[nextNodes[i].state] < nextNodes[i].path.length()) {
+				continue;
+			}
+			frontier.push(nextNodes[i]);
+			if (frontier.size() > maxFrontier) {
+				maxFrontier = frontier.size();
+			}
+		}
+	}
+	return startNode;
+}
+
+int main() {
+	Node startNode;
+	startNode.state = "0102030405SS07080906101113141512";
+	vector<Node> test;
+	generateSuccessors(startNode, test);
+	for (unsigned int i = 0; i < test.size(); i++) {
+		cout << test[i].state << " " << test[i].path << endl;
+		Node solved;
+		int method = 1;
+		switch (method) {
+		case 1: //поиск в ширину
+			cout << "BFS USED" << endl;
+			solved = bfs(startNode);
+			break;
+		case 2: //поиск в глубину
+			cout << "DFS USED" << endl;
+			solved = dfs(startNode);
+			break;
+		}
+
+		if (!goalTest(solved)) {
+			cout << "No solution found" << endl;
+			return 1;
+		}
+
+		cout << "path to solution: " << solved.path << endl;
+		return 0;
+	}
+}
