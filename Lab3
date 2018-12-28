@@ -1,0 +1,618 @@
+#include <iostream>
+#include <list> 
+#include <vector> 
+#include <string> 
+
+using namespace std;
+
+template< typename T > class Tree;
+
+template< typename T >
+struct TreeNode
+{
+	friend class Tree< T >;
+
+	TreeNode();
+	TreeNode(const T &);
+
+	T _data;
+	TreeNode< T > *_left;
+	TreeNode< T > *_right;
+	int height;
+};
+
+template< typename T >
+TreeNode< T >::TreeNode() :
+	_left(0),
+	_right(0),
+	height(0)
+{
+}
+
+template< typename T >
+TreeNode< T >::TreeNode(const T &data) :
+	_data(data),
+	_left(0),
+	_right(0),
+	height(0)
+{
+}
+
+template< typename T >
+class Tree
+{
+	template< typename T >
+	friend T max(const T &, const T &);
+
+public:
+	Tree();
+	virtual ~Tree();
+
+	virtual void insert(const T &);
+	virtual void remove(const T &);
+	virtual void find(T data);
+
+	void print();
+
+protected:
+	TreeNode< T > *_root;
+
+	void insert_helper(TreeNode< T > **, const T &);
+	void remove_helper(TreeNode< T > **, const T &);
+	TreeNode< T > *find_helper(TreeNode<T> *node, T data);
+
+	void delete_helper(TreeNode< T > *);
+	void print_helper(TreeNode< T >*, int);
+};
+
+template< typename T >
+Tree< T >::Tree() :
+	_root(0)
+{
+}
+
+template< typename T >
+Tree< T >::~Tree()
+{
+	delete_helper(_root);
+}
+
+template< typename T >
+void Tree< T >::find( T data)
+{
+	this->_root = find_helper(this->_root, data);
+}
+
+template< typename T >
+TreeNode< T >* Tree< T >::find_helper(TreeNode< T > *node, T data)
+{
+	if (node == NULL)
+	{
+		return NULL;
+	}
+	if (node->_data == data)
+	{
+		cout << "Node " << data << " found!" << endl;
+		return node;
+	}
+
+	if (data <= node->_data)
+	{
+	
+		if (node->_left != NULL)
+			return find_helper(node->_left, data);
+		else
+		{
+			cout << "Node " << data << " not found!" << endl;
+			return NULL;
+		}
+	}
+	else
+	{
+		
+		if (node->_right)
+			return find_helper(node->_right, data);
+		else
+		{
+			cout << "Node " << data << " not found!" << endl;
+			return NULL; 
+		}
+	}
+}
+
+template< typename T >
+void Tree< T >::delete_helper(TreeNode< T > *node)
+{
+	if (node != 0)
+	{
+		delete_helper(node->_left);
+		delete_helper(node->_right);
+
+		delete node;
+	}
+}
+
+template< typename T >
+void Tree< T >::insert(const T &data)
+{
+	insert_helper(&_root, data);
+}
+
+template< typename T >
+void Tree< T >::insert_helper(TreeNode< T > **node, const T &data)
+{
+	if (*node == 0)
+		*node = new TreeNode< T >(data);
+	else
+	{
+		if ((*node)->_data > data)
+			insert_helper(&((*node)->_left), data);
+		else
+		{
+			if ((*node)->_data < data)
+				insert_helper(&((*node)->_right), data);
+		}
+	}
+}
+
+template< typename T >
+void Tree< T >::remove(const T &data)
+{
+	remove_helper(&_root, data);
+}
+
+template< typename T >
+void Tree< T >::remove_helper(TreeNode< T > **node, const T &data)
+{
+	if ((*node)->_data == data)
+	{
+		TreeNode< T > *del_node = *node;
+
+		if ((*node)->_left == 0 && (*node)->_right == 0)
+		{
+			*node = 0;
+
+			delete del_node;
+		}
+		else
+		{
+			if ((*node)->_left == 0)
+			{
+				*node = (*node)->_right;
+
+				delete del_node;
+			}
+			else
+			{
+				if ((*node)->_right == 0)
+				{
+					*node = (*node)->_left;
+
+					delete del_node;
+				}
+				else
+				{
+					TreeNode< T > *p = *node;
+					TreeNode< T > *i = (*node)->_left;
+
+					while (i->_right != 0)
+					{
+						p = i;
+						i = i->_right;
+					}
+
+					*node = i;
+					p->_right = i->_left;
+					i->_right = del_node->_right;
+					i->_left = p;
+
+					delete del_node;
+				}
+			}
+		}
+	}
+	else
+	{
+		if ((*node)->_data > data)
+			remove_helper(&((*node)->_left), data);
+		else
+		{
+			if ((*node)->_data < data)
+				remove_helper(&((*node)->_right), data);
+		}
+	}
+}
+
+template< typename T >
+void Tree< T >::print()
+{
+	print_helper(_root, 0);
+}
+
+template< typename T >
+void Tree< T >::print_helper(TreeNode< T > *node, int spaces)
+{
+	while (node != 0)
+	{
+		print_helper(node->_right, spaces + 5);
+
+		for (int i = 1; i < spaces; ++i)
+			std::cout << ' ';
+
+		cout << node->_data << endl;
+
+		node = node->_left;
+		spaces += 5;
+	}
+}
+
+template< typename T >
+T max(const T &left, const T &right)
+{
+	return left > right ? left : right;
+}
+
+template <typename T>
+class AVLTree : public Tree<T>
+{
+public:
+	AVLTree();
+	void insert(T data);
+	void remove(T data);
+
+protected:
+	TreeNode<T> *insert_helper(TreeNode<T> *node, T data);
+	TreeNode<T> *remove_helper(TreeNode<T> *node, T data);
+
+	int height(TreeNode<T> *node);
+	TreeNode<T> *SRightRotate(TreeNode<T> *node);
+	TreeNode<T> *SLeftRotate(TreeNode<T> *node);
+	TreeNode<T> *BRightRotate(TreeNode<T> *node);
+	TreeNode<T> *BLeftRotate(TreeNode<T> *node);
+};
+
+template<typename T>
+AVLTree<T>::AVLTree()
+	: Tree<T>()
+{
+}
+
+template<typename T>
+void AVLTree<T>::insert(T data)
+{
+	this->_root = insert_helper(this->_root, data);
+}
+
+template<typename T>
+void AVLTree<T>::remove(T data)
+{
+	this->_root = remove_helper(this->_root, data);
+}
+
+template<typename T>
+TreeNode<T>* AVLTree<T>::insert_helper(TreeNode<T>* node, T data)
+{
+	if (node == NULL) {
+		return new TreeNode<T>(data);
+	}
+	else if (data < node->_data) {
+		node->_left = insert_helper(node->_left, data);
+		if (height(node->_left) - height(node->_right) == 2) {
+			if (data < node->_left->_data)
+				node = SRightRotate(node);
+			else
+				node = BRightRotate(node);
+		}
+	}
+	else if (data > node->_data) {
+		node->_right = insert_helper(node->_right, data);
+		if (height(node->_right) - height(node->_left) == 2) {
+			if (data > node->_right->_data)
+				node = SLeftRotate(node);
+			else
+				node = BLeftRotate(node);
+		}
+	}
+	node->height = max(height(node->_left), height(node->_right)) + 1;
+	return node;
+}
+
+template<typename T>
+TreeNode<T>* AVLTree<T>::remove_helper(TreeNode<T>* node, T data)
+{
+	if (node == NULL)
+		return NULL;
+
+	TreeNode<T> *temp = NULL;
+
+	if (data < node->_data)
+		node->_left = remove_helper(node->_left, data);
+	else if (data > node->_data)
+		node->_right = remove_helper(node->_right, data);
+	else if (node->_left != NULL && node->_right != NULL) {
+		temp = this->minImpl(node->_right);
+		node->_data = temp->_data;
+		node->_right = remove_helper(node->_right, node->_data);
+	}
+	else {
+		temp = node;
+		if (node->_left == NULL)
+			node = node->_right;
+		else if (node->_right == NULL)
+			node = node->_left;
+
+		delete temp;
+	}
+	if (node == NULL)
+		return  node;
+
+	node->height = std::max(height(node->_left), height(node->_right)) + 1;
+
+	if (height(node->_left) - height(node->_right) == 2) {
+		if (height(node->_left->_left) - height(node->_left->_right) == 1)
+			return SLeftRotate(node);
+		else
+			return BLeftRotate(node);
+	}
+	else if (height(node->_right) - height(node->_left) == 2) {
+		if (height(node->_right->_right) - height(node->_right->_left) == 1)
+			return SRightRotate(node);
+		else
+			return BRightRotate(node);
+	}
+	return node;
+}
+
+template<typename T>
+int AVLTree<T>::height(TreeNode<T>* node)
+{
+	return node != NULL ? node->height : -1;
+}
+
+
+template<typename T>
+TreeNode<T> *AVLTree<T>::SRightRotate(TreeNode<T> *node)
+{
+	TreeNode<T> *temp = node->_left;
+	node->_left = temp->_right;
+	temp->_right = node;
+	node->height = max(height(node->_left), height(node->_right)) + 1;
+	temp->height = max(height(node->_left), node->height) + 1;
+	return temp;
+}
+
+template<typename T>
+TreeNode<T> *AVLTree<T>::SLeftRotate(TreeNode<T> *node)
+{
+	TreeNode<T> *temp = node->_right;
+	node->_right = temp->_left;
+	temp->_left = node;
+	node->height = max(height(node->_left), height(node->_right)) + 1;
+	temp->height = max(height(node->_right), node->height) + 1;
+	return temp;
+}
+
+template<typename T>
+TreeNode<T> *AVLTree<T>::BRightRotate(TreeNode<T> *node)
+{
+	node->_left = SLeftRotate(node->_left);
+	return SRightRotate(node);
+}
+
+template<typename T>
+TreeNode<T> *AVLTree<T>::BLeftRotate(TreeNode<T> *node)
+{
+	node->_right = SLeftRotate(node->_right);
+	return SRightRotate(node);
+}
+
+
+
+
+
+
+
+
+template <typename K>
+struct HashFunction {
+	virtual ~HashFunction() {}
+	virtual size_t hash(const K &value) const = 0;
+	virtual void setBits(size_t count) = 0;
+};
+
+template <typename K>
+class DefaultHashFunction : public HashFunction<K> {
+public:
+	void setBits(size_t count);
+	size_t hash(const K &value) const;
+};
+
+// define more intelligently 
+#define BITS_IN_INT 32 
+
+template <>
+class DefaultHashFunction<int> : public HashFunction<int> {
+	size_t bits;
+public:
+	DefaultHashFunction(size_t bits_ = BITS_IN_INT) : bits(bits_) {}
+
+	void setBits(size_t count) { bits = count; }
+
+	size_t hash(const int &value) const
+	{
+		return (size_t)(value * 0x9E370001UL) >> (BITS_IN_INT - bits);
+	}
+};
+
+template <typename K, typename V>
+class hashtable {
+	size_t bucket_bits;
+	size_t bucket_count;
+
+	typedef std::list<std::pair<K, V> > bukkit_t;
+
+	std::vector<bukkit_t*> buckets;
+	HashFunction<K> *please;
+
+public:
+	hashtable(HashFunction<K> *func = new DefaultHashFunction<K>());
+	virtual ~hashtable();
+
+	bool contains(const K &key) const;
+	bool add(const K &key, const V &value);
+	V& get(const K &key);
+	bool remove(const K &key);
+
+
+	template <typename K_, typename V_>
+	friend
+		std::ostream& operator<<(std::ostream &stream, const hashtable<K_, V_> &table);
+
+private:
+	bool bucketContains(const bukkit_t* bucket, const K &key) const;
+	typename bukkit_t::iterator find(const K &key, bukkit_t *bucket) const;
+};
+
+template <typename K, typename V>
+hashtable<K, V>::hashtable(HashFunction<K> *func /*= new DefaultHashFunction<K>(bucket_bits)*/)
+	: bucket_bits(8),
+	bucket_count(1 << bucket_bits),
+	buckets(bucket_count, NULL),
+	please(func)
+{
+	please->setBits(bucket_bits);
+}
+
+template <typename K, typename V>
+hashtable<K, V>::~hashtable()
+{
+	for (size_t i = 0; i < bucket_count; ++i) {
+		delete buckets[i];
+	}
+	delete please;
+}
+
+template <typename K, typename V>
+bool hashtable<K, V>::contains(const K &key) const
+{
+	size_t bucket = please->hash(key);
+	if (!buckets[bucket]) {
+		return false;
+	}
+	return bucketContains(buckets[bucket], key);
+}
+
+template <typename K, typename V>
+bool hashtable<K, V>::bucketContains(const bukkit_t* bucket, const K &key) const
+{
+	for (typename bukkit_t::const_iterator i = bucket->begin();
+		i != bucket->end();
+		++i)
+	{
+		if ((*i).first == key) {
+			return true;
+		}
+	}
+	return false;
+}
+
+template <typename K, typename V>
+bool hashtable<K, V>::add(const K &key, const V &value)
+{
+	if (contains(key)) {
+		return false;
+	}
+	size_t bucket = please->hash(key);
+	bukkit_t *theBucket = buckets[bucket];
+	if (!theBucket) {
+		theBucket = buckets[bucket] = new bukkit_t();
+	}
+	theBucket->push_front(std::pair<K, V>(key, value));
+	return true;
+}
+
+template <typename K, typename V>
+bool hashtable<K, V>::remove(const K &key)
+{
+	bukkit_t *bucket = buckets[please->hash(key)];
+	if (!bucket) {
+		return false;
+	}
+	typename bukkit_t::iterator pos = find(key, bucket);
+	if (pos == bucket->end()) {
+		return false;
+	}
+	bucket->erase(pos);
+	return true;
+}
+
+template <typename K, typename V>
+typename hashtable<K, V>::bukkit_t::iterator
+hashtable<K, V>::find(const K &key, bukkit_t *bucket) const
+{
+	// assert !bucket 
+	typename bukkit_t::iterator res;
+	for (res = bucket->begin(); res != bucket->end(); ++res) {
+		if ((*res).first == key) {
+			break;
+		}
+	}
+	return res;
+}
+
+template <typename K, typename V>
+V& hashtable<K, V>::get(const K &key)
+{
+	// assert contains(key) 
+	return (*find(key, buckets[please->hash(key)])).second;
+}
+
+template <typename K, typename V>
+std::ostream& operator<<(std::ostream &stream, const hashtable<K, V> &table)
+{
+	stream << "[";
+	bool first = true;
+	for (typename std::vector<typename hashtable<K, V>::bukkit_t*>::const_iterator bucket = table.buckets.begin();
+		bucket != table.buckets.end();
+		++bucket)
+	{
+		if (*bucket == NULL) {
+			continue;
+		}
+		for (typename hashtable<K, V>::bukkit_t::const_iterator i = (*bucket)->begin();
+			i
+			!= (*bucket)->end();
+			++i)
+		{
+			if (!first) {
+				stream << ", ";
+			}
+			else {
+				first = false;
+			}
+			stream <<(*i).first << " -> " <<(*i).second;
+		}
+	}
+	stream << "]";
+	return stream;
+}
+
+int main()
+{
+	Tree<int> tree;
+	AVLTree<int> treeB;
+	int s[8] = { 12, 53, 3, 75, 7, 8, 9, 10 };
+	for (int i = 0; i < 8; i++) {
+		int m = s[i];
+		tree.insert(m);
+		treeB.insert(m);
+	}
+	tree.print();
+	cout << endl << endl << endl << endl << endl << endl;
+	treeB.print();
+	cout << endl;
+	tree.find(75);
+	tree.find(2);
+	treeB.find(75);
+	treeB.find(2);
+}
